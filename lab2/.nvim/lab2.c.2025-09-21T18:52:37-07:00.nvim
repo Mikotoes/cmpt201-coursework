@@ -1,0 +1,54 @@
+#define _POSIX_C_SOURCE 200809L
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+int main(void) {
+  char *lineptr = NULL;
+  char *nulptr = NULL;
+  size_t len = 0;
+  ssize_t input;
+
+  while (1) {
+    printf("Enter programs to run.\n");
+    input = getline(&lineptr, &len, stdin);
+    if (input == -1) {
+      free(lineptr);
+      return 1;
+    }
+    if (input == 0) {
+      continue;
+    }
+
+    if (*(lineptr + input - 1) == '\n') {
+      *(lineptr + input - 1) = '\0';
+    }
+
+    char *token;
+    char *saveptr;
+    for (token = strtok_r(lineptr, " ", &saveptr); token != NULL;
+         token = strtok_r(NULL, " ", &saveptr)) {
+    }
+
+    pid_t pid = fork();
+    int status;
+
+    if (pid < 0) {
+      perror("failed");
+    } else if (pid == 0) {
+      execl(lineptr, lineptr, nulptr);
+      perror("execl failed");
+    } else {
+      waitpid(pid, &status, 0);
+      if (WIFEXITED(status)) {
+        printf("Child exited with status %d\n", WEXITSTATUS(status));
+      } else if (WIFSIGNALED(status)) {
+        printf("Child killed with signal %d\n", WTERMSIG(status));
+      }
+    }
+  }
+
+  return 0;
+}
